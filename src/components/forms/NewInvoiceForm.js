@@ -1,6 +1,6 @@
 import { Fragment, use, useRef, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { MdOutlineCancel, MdTaskAlt } from "react-icons/md";
+import { MdCancel, MdOutlineCancel, MdTaskAlt } from "react-icons/md";
 import { AiOutlineClose } from "react-icons/ai";
 import { BiPlus } from "react-icons/bi";
 import DatePicker from "../DatePicker";
@@ -18,16 +18,63 @@ const NewInvoiceForm = ({ invoice, setInvoice }) => {
   const [taxRate, setTaxRate] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totals, setTotals] = useState(0);
+  const [data, setData] = useState([
+    {
+      itemDesc: "",
+      quantity: 1,
+      unitCost: 0,
+      tax: 0,
+      total: 0,
+    },
+  ]);
+
+  const addItem = () => {
+    return data.push({
+      itemDesc: "",
+      quantity: 1,
+      unitCost: 0,
+      tax: 0,
+      total: 0,
+    });
+  };
+
+  const closeItem = (i) => {
+    const updateData = [...data];
+    updateData.splice(i, 1);
+    setData(updateData);
+  };
+
+  const handleItemChange = (index, property, value) => {
+    const newData = [...data]; // Create a copy of the data array
+    newData[index][property] = value; // Update the property of the specified item
+    setData(newData); // Update the state with the modified data
+  };
+
+  const recalculateTotal = (index) => {
+    const item = data[index];
+    const tax = item.quantity * item.unitCost * (item.tax / 100);
+    const total = item.quantity * item.unitCost + tax;
+    handleItemChange(index, "total", total);
+  };
+
+  //function to calculate all the totals
+  const calculateTotalSum = () => {
+    return data.reduce((acc, item) => acc + item.total, 0);
+  };
+
+  // Function to calculate the sum of all taxes
+  const calculateTaxSum = () => {
+    return data.reduce(
+      (acc, item) => acc + item.quantity * item.unitCost * (item.tax / 100),
+      0
+    );
+  };
 
   const addInput = () => {
     const newArray = { id: Date.now() };
     setInputArray([...inputArray, newArray]);
   };
-  // const calcTotal = () => {
-  //   let total;
-  //   total = quantity * unitCost;
-  //   if (tax) setTotalAmount(total);
-  // };
+
   const {
     invoiceForm: {
       job,
@@ -148,101 +195,136 @@ const NewInvoiceForm = ({ invoice, setInvoice }) => {
                       )}
                     </div>
                     <hr />
-                    {inputArray.length >= 1 &&
-                      inputArray.map((input, i) => {
-                        return (
-                          <NewInvoiceInputs
-                            input={input}
-                            key={i + 4}
-                            setInputArray={setInputArray}
-                            inputArray={inputArray}
-                          />
-                        );
-                      })}
-                    {/* <section className="grid grid-cols-[40%,5%,15%,15%,15%] gap-4">
-                      <div className="text-sm grid gap-2 relative">
-                        <label>Item Description</label>
-                        <input
-                          name="itemDesc"
-                          type="text"
-                          value={values.itemDesc}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newInvoiceData(e);
-                          }}
-                          onBlur={handleBlur}
-                          className={`${
-                            errors.itemDesc && touched.itemDesc
-                              ? "border border-red-800 outline-none  text-[#8094ae] rounded-md py-2 px-2 font-medium capitalize"
-                              : "outline-none border text-[#8094ae] rounded-md py-2 px-2 font-medium capitalize"
-                          }`}
-                          placeholder="Item Description"
-                        />
-                        {errors.itemDesc && touched.itemDesc && (
-                          <ValidateForm error={errors.itemDesc} />
-                        )}
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Qty</label>
-                        <input
-                          name="quantity"
-                          type="text"
-                          value={values.quantity}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newInvoiceData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="1"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Unit Cost ( N )</label>
-                        <input
-                          name="unitCost"
-                          type="text"
-                          value={values.unitCost}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newInvoiceData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Tax (%)</label>
-                        <input
-                          name="tax"
-                          type="text"
-                          value={values.tax}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newInvoiceData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="Tax (%)"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Total ( N )</label>
-                        <input
-                          name="total"
-                          type="text"
-                          value={values.total}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newInvoiceData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </section> */}
+                    {data.map((d, i) => {
+                      return (
+                        <main key={i}>
+                          <section className="grid grid-cols-[35%,5%,15%,15%,15%,5%] gap-4 items-end">
+                            <div className="text-sm grid gap-2  relative">
+                              <label>Item Description</label>
+                              <input
+                                name="itemDesc"
+                                type="text"
+                                value={d.itemDesc}
+                                onChange={(e) =>
+                                  handleItemChange(
+                                    i,
+                                    "itemDesc",
+                                    e.target.value
+                                  )
+                                }
+                                // value={values.itemDesc}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                // onBlur={handleBlur}
+                                // className={`${
+                                //   errors.itemDesc && touched.itemDesc
+                                //     ? "border border-red-800 w-full outline-none  rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                //     : "w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                // }`}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="Item Description"
+                              />
+                              {/* {errors.itemDesc && touched.itemDesc && (
+                                <ValidateForm error={errors.itemDesc} />
+                              )} */}
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Qty</label>
+                              <input
+                                name="quantity"
+                                type="text"
+                                value={d.quantity}
+                                onChange={(e) => {
+                                  handleItemChange(
+                                    i,
+                                    "quantity",
+                                    e.target.value
+                                  );
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.quantity}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="1"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Unit Cost ( N )</label>
+                              <input
+                                name="unitCost"
+                                type="text"
+                                value={d.unitCost}
+                                onChange={(e) => {
+                                  handleItemChange(
+                                    i,
+                                    "unitCost",
+                                    e.target.value
+                                  );
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.unitCost}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Tax (%)</label>
+                              <input
+                                name="tax"
+                                type="text"
+                                value={d.tax}
+                                onChange={(e) => {
+                                  handleItemChange(i, "tax", e.target.value);
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.tax}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="Tax (%)"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Total ( N )</label>
+                              <input
+                                name="total"
+                                type="text"
+                                value={d.total}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border  rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            {i !== 0 && (
+                              <div
+                                onClick={() => closeItem(i)}
+                                className="border border-red-600 bg-red-300  rounded-full p-1 w-max h-max mx-auto"
+                              >
+                                <MdCancel className="text-red-600 mx-auto text-2xl w-max" />
+                              </div>
+                            )}
+                          </section>
+                        </main>
+                      );
+                    })}
                     <section className="flex items-center justify-between gap-4">
                       <button
-                        onClick={() => addInput()}
                         className="flex items-center gap-2 bg-blue-300 hover:bg-blue-500 p-2.5 rounded-md text-sm text-blue-500 hover:text-white cursor-pointer font-bold"
+                        onClick={addItem}
                       >
                         <BiPlus />
                         <span>Add Item</span>
@@ -250,16 +332,20 @@ const NewInvoiceForm = ({ invoice, setInvoice }) => {
                       <div className="w-80 grid gap-2">
                         <div className="flex justify-between">
                           <p>Sub Total:</p>
-                          <p className="font-semibold">{total}</p>
+                          <p className="font-semibold">
+                            {calculateTotalSum() - calculateTaxSum()}
+                          </p>
                         </div>
                         <div className="flex justify-between">
                           <p>Tax:</p>
-                          <p className="font-semibold">{tax}</p>
+                          <p className="font-semibold">{calculateTaxSum()}</p>
                         </div>
                         <hr />
                         <div className="flex justify-between text-md font-semibold">
                           <p>Total:</p>
-                          <p className="font-semibold">N0.00</p>
+                          <p className="font-semibold">
+                            N{calculateTotalSum()}
+                          </p>
                         </div>
                       </div>
                     </section>

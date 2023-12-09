@@ -18,7 +18,7 @@ const NavBar = () => {
         <div className="flex lg:flex-1">
           <span className="sr-only">Your Company</span>
           {/* <Image className="h-8 w-auto" src={luraHeader} alt="lura logo" /> */}
-          <h3 className="mb-4 text-2xl font-extrabold">1MECH</h3>
+          <h3 className="mb-4 text-2xl font-extrabold">MECH</h3>
         </div>
         <div className="flex lg:hidden">
           <button

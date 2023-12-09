@@ -5,6 +5,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import { BiPlus } from "react-icons/bi";
 import { useFormContext } from "@/context/form_context";
 import { useFormik } from "formik";
+import { MdCancel } from "react-icons/md";
 import { toast } from "react-toastify";
 import { newQuoteSchema } from "@/schemas";
 import ValidateForm from "../ValidateForm";
@@ -13,6 +14,15 @@ import SuccessPrompt from "../SuccessPrompt";
 const NewQuotesForm = ({ quote, setQuote }) => {
   const cancelButtonRef = useRef(null);
   const [success, setSuccess] = useState(false);
+  const [data, setData] = useState([
+    {
+      itemDesc: "",
+      quantity: 1,
+      unitCost: 0,
+      tax: 0,
+      total: 0,
+    },
+  ]);
   const {
     quoteForm: { job, itemDesc, quantity, unitCost, tax, total, notes },
     newQuoteData,
@@ -46,6 +56,48 @@ const NewQuotesForm = ({ quote, setQuote }) => {
     validationSchema: newQuoteSchema,
     onSubmit,
   });
+
+  const addItem = () => {
+    return data.push({
+      itemDesc: "",
+      quantity: 1,
+      unitCost: 0,
+      tax: 0,
+      total: 0,
+    });
+  };
+
+  const closeItem = (i) => {
+    const updateData = [...data];
+    updateData.splice(i, 1);
+    setData(updateData);
+  };
+
+  const handleItemChange = (index, property, value) => {
+    const newData = [...data]; // Create a copy of the data array
+    newData[index][property] = value; // Update the property of the specified item
+    setData(newData); // Update the state with the modified data
+  };
+
+  const recalculateTotal = (index) => {
+    const item = data[index];
+    const tax = item.quantity * item.unitCost * (item.tax / 100);
+    const total = item.quantity * item.unitCost + tax;
+    handleItemChange(index, "total", total);
+  };
+
+  //function to calculate all the totals
+  const calculateTotalSum = () => {
+    return data.reduce((acc, item) => acc + item.total, 0);
+  };
+
+  // Function to calculate the sum of all taxes
+  const calculateTaxSum = () => {
+    return data.reduce(
+      (acc, item) => acc + item.quantity * item.unitCost * (item.tax / 100),
+      0
+    );
+  };
 
   return (
     <Transition.Root show={quote} as={Fragment}>
@@ -118,104 +170,158 @@ const NewQuotesForm = ({ quote, setQuote }) => {
                       )}
                     </div>
                     <hr />
-                    <section className="grid grid-cols-[40%,5%,15%,15%,15%] gap-4">
-                      <div className="text-sm grid gap-2 relative">
-                        <label>Item Description</label>
-                        <input
-                          name="itemDesc"
-                          type="text"
-                          value={values.itemDesc}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newQuoteData(e);
-                          }}
-                          onBlur={handleBlur}
-                          className={`${
-                            errors.itemDesc && touched.itemDesc
-                              ? "border border-red-800 w-full outline-none  rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                              : "w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          }`}
-                          placeholder="Item Description"
-                        />
-                        {errors.itemDesc && touched.itemDesc && (
-                          <ValidateForm error={errors.itemDesc} />
-                        )}
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Qty</label>
-                        <input
-                          name="quantity"
-                          type="text"
-                          value={values.quantity}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newQuoteData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="1"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Unit Cost ( N )</label>
-                        <input
-                          name="unitCost"
-                          type="text"
-                          value={values.unitCost}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newQuoteData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Tax (%)</label>
-                        <input
-                          name="tax"
-                          type="text"
-                          value={values.tax}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newQuoteData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="Tax (%)"
-                        />
-                      </div>
-                      <div className="text-sm grid gap-2">
-                        <label>Total ( N )</label>
-                        <input
-                          name="total"
-                          type="text"
-                          value={values.total}
-                          onChange={(e) => {
-                            handleChange(e);
-                            newQuoteData(e);
-                          }}
-                          className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </section>
+                    {/* increase quotes items */}
+                    {data.map((d, i) => {
+                      return (
+                        <main key={i}>
+                          <section className="grid grid-cols-[35%,5%,15%,15%,15%,5%] gap-4 items-end">
+                            <div className="text-sm grid gap-2  relative">
+                              <label>Item Description</label>
+                              <input
+                                name="itemDesc"
+                                type="text"
+                                value={d.itemDesc}
+                                onChange={(e) =>
+                                  handleItemChange(
+                                    i,
+                                    "itemDesc",
+                                    e.target.value
+                                  )
+                                }
+                                // value={values.itemDesc}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                // onBlur={handleBlur}
+                                // className={`${
+                                //   errors.itemDesc && touched.itemDesc
+                                //     ? "border border-red-800 w-full outline-none  rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                //     : "w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                // }`}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="Item Description"
+                              />
+                              {/* {errors.itemDesc && touched.itemDesc && (
+                                <ValidateForm error={errors.itemDesc} />
+                              )} */}
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Qty</label>
+                              <input
+                                name="quantity"
+                                type="text"
+                                value={d.quantity}
+                                onChange={(e) => {
+                                  handleItemChange(
+                                    i,
+                                    "quantity",
+                                    e.target.value
+                                  );
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.quantity}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="1"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Unit Cost ( N )</label>
+                              <input
+                                name="unitCost"
+                                type="text"
+                                value={d.unitCost}
+                                onChange={(e) => {
+                                  handleItemChange(
+                                    i,
+                                    "unitCost",
+                                    e.target.value
+                                  );
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.unitCost}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Tax (%)</label>
+                              <input
+                                name="tax"
+                                type="text"
+                                value={d.tax}
+                                onChange={(e) => {
+                                  handleItemChange(i, "tax", e.target.value);
+                                  recalculateTotal(i);
+                                }}
+                                // value={values.tax}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="Tax (%)"
+                              />
+                            </div>
+                            <div className="text-sm grid gap-2">
+                              <label>Total ( N )</label>
+                              <input
+                                name="total"
+                                type="text"
+                                value={d.total}
+                                // onChange={(e) => {
+                                //   handleChange(e);
+                                //   newQuoteData(e);
+                                // }}
+                                className="w-full outline-none border  rounded-md py-2 pl-3 placeholder:text-[#8094ae]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            {i !== 0 && (
+                              <div
+                                onClick={() => closeItem(i)}
+                                className="border border-red-600 bg-red-300  rounded-full p-1 w-max h-max mx-auto"
+                              >
+                                <MdCancel className="text-red-600 mx-auto text-2xl w-max" />
+                              </div>
+                            )}
+                          </section>
+                        </main>
+                      );
+                    })}
                     <section className="flex items-center justify-between">
-                      <button className="flex items-center gap-2 bg-blue-300 hover:bg-blue-500 p-2.5 rounded-md text-sm text-blue-500 hover:text-white cursor-pointer font-bold">
+                      <button
+                        className="flex items-center gap-2 bg-blue-300 hover:bg-blue-500 p-2.5 rounded-md text-sm text-blue-500 hover:text-white cursor-pointer font-bold"
+                        onClick={addItem}
+                      >
                         <BiPlus />
                         <span>Add Item</span>
                       </button>
                       <div className="w-80 grid gap-2">
                         <div className="flex justify-between">
                           <p>Sub Total:</p>
-                          <p className="font-semibold">{total}</p>
+                          <p className="font-semibold">
+                            {calculateTotalSum() - calculateTaxSum()}
+                          </p>
                         </div>
                         <div className="flex justify-between">
                           <p>Tax:</p>
-                          <p className="font-semibold">{tax}</p>
+                          <p className="font-semibold">{calculateTaxSum()}</p>
                         </div>
                         <hr />
                         <div className="flex justify-between text-md font-semibold">
                           <p>Total:</p>
-                          <p className="font-semibold">N0.00</p>
+                          <p className="font-semibold">
+                            N{calculateTotalSum()}
+                          </p>
                         </div>
                       </div>
                     </section>

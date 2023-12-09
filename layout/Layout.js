@@ -77,7 +77,7 @@ const Layout = ({ children }) => {
     <main className="flex relative" onClick={toggleShowProfile}>
       {activeMenu && (
         <div
-          className="fixed z-20 inset-0 bg-[#10192466] transition duration-200s"
+          className="absolute z-20 inset-0 bg-[#10192466] transition duration-200s"
           onClick={() => {
             setActiveMenu(false);
           }}
@@ -88,7 +88,7 @@ const Layout = ({ children }) => {
         <NewFeedbackForm feedback={feedback} setFeedback={setFeedback} />
       ) : null}
       <div
-        className={`scrollbar fixed min-h-screen top-0 left-0 w-72 overflow-auto h-full xl:w-72 xl:translate-x-0 transition-{transform,width} duration-500 linear z-30 bg-white ${
+        className={`scrollbar absolute min-h-screen top-0 left-0 w-72 overflow-auto h-full xl:w-72 xl:translate-x-0 transition-{transform,width} duration-500 linear z-30 bg-white ${
           activeMenu ? "translate-x-0 w-72" : "-translate-x-full"
         } pt-8`}
       >
